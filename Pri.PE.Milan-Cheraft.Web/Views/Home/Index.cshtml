@@ -1,0 +1,460 @@
+﻿<div v-if="!loggedIn" class="container py-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12 col-md-8 text-center">
+            <h2 class="mb-4">Welcome to Muscle Matrix</h2>
+            <p class="lead">Please log in to access our premium workout programs and features.</p>
+            <p>No account? <a v-on:click="toggleRegisterModal" class="text-primary">Register!</a></p>
+        </div>
+    </div>
+</div>
+
+<div v-if="loading" class="container py-5">
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div v-else>
+    <div v-if="isTrainer" class="container py-4">
+        <div class="row justify-content-center mb-4">
+            <div class="col-12 col-lg-8 text-center">
+                <h2>Manage Workouts</h2>
+                <!-- Add controls for trainers (if needed) -->
+            </div>
+        </div>
+    </div>
+
+    <div v-if="loggedIn">
+        <div v-if="showAllWorkouts" class="container py-4">
+            <div class="row">
+                <button v-if="isTrainer" v-on:click="toggleWorkoutCreateModal" type="button" class="btn btn-primary btn-sm mb-3">Create</button>
+                <div v-for="workout in workouts" :key="workout.id" class="col-12 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <img src="https://www.shutterstock.com/image-illustration/3d-rendering-black-dumbbells-on-600nw-1956616558.jpg" class="card-img-top" alt="Workout Image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ workout.name }}</h5>
+                            <p class="card-text">{{ workout.description }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Duration:</strong> {{ workout.duration }} minutes</li>
+                                <li class="list-group-item"><strong>Muscle Group:</strong> {{ workout.muscleGroup.name }}</li>
+                            </ul>
+                            <div class="mt-3">
+                                <button type="button" v-on:click="getWorkoutDetails(workout.id)" class="btn btn-success btn-sm mr-2">Details</button>
+                                <button v-if="isTrainer" v-on:click="showUpdateWorkout(workout.id)" type="button" class="btn btn-primary btn-sm mr-2">Edit</button>
+                                <button v-if="isTrainer" v-on:click="deleteWorkout(workout.id)" type="button" class="btn btn-danger btn-sm">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showWorkoutDetails" class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
+
+                    <div class="card">
+                        <img src="https://www.shutterstock.com/image-illustration/3d-rendering-black-dumbbells-on-600nw-1956616558.jpg" class="card-img-top" alt="Workout Image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ workoutDetails.name }}</h5>
+                            <p class="card-text">{{ workoutDetails.description }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Duration:</strong> {{ workoutDetails.duration }} minutes</li>
+                                <li class="list-group-item"><strong>Muscle Group:</strong> {{ workoutDetails.muscleGroup.name }}</li>
+                                <li class="list-group-item">
+                                    <strong>Exercises:</strong>
+                                    <ul>
+                                        <li v-for="exercise in workoutDetails.exercises" :key="exercise.id">
+                                            {{ exercise.name }} - {{ exercise.sets }} sets of {{ exercise.reps }} reps with {{ exercise.weight }} kg
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <div class="mt-3">
+                                <button type="button" v-on:click="getWorkouts" class="btn btn-success btn-sm mr-2">Back</button>
+                                <button v-if="isTrainer" v-on:click="showUpdateWorkout(workoutDetails.id)" type="button" class="btn btn-primary btn-sm mr-2">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showAllExercises" class="container py-4">
+            <div class="row">
+                <button v-if="isTrainer" v-on:click="toggleExerciseCreateModal" type="button" class="btn btn-primary btn-sm mb-3">Create</button>
+                <div v-for="exercise in exercises" :key="exercise.id" class="col-12 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSrKQzHSK05znKlfW5BZeHxeuixXdBMXTkJA&s" class="card-img-top" alt="Workout Image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ exercise.name }}</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Muscle group:</strong> {{ getMuscleGroupName(exercise.muscleGroupId) }}</li>
+                            </ul>
+                            <div class="mt-3">
+                                <button type="button" v-on:click="getExerciseDetails(exercise.id)" class="btn btn-success btn-sm mr-2">Details</button>
+                                <button v-if="isTrainer" v-on:click="showUpdateExercise(exercise.id)" type="button" class="btn btn-primary btn-sm mr-2">Edit</button>
+                                <button v-if="isTrainer" v-on:click="deleteExercise(exercise.id)" type="button" class="btn btn-danger btn-sm">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showExerciseDetails" class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card">
+                    <img src="https://www.healthdigest.com/img/gallery/the-male-celebrity-workout-routine-people-are-most-likely-to-try-exclusive-survey/l-intro-1663175120.jpg" class="card-img-top" alt="Workout Image">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ exerciseDetails.name }}</h5>
+                        <p class="card-text">{{ exerciseDetails.description }}</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Muscle group:</strong> {{ getMuscleGroupName(exerciseDetails.muscleGroupId) }}</li>
+                            <li class="list-group-item"><strong>Sets:</strong> {{ exerciseDetails.sets}}</li>
+                            <li class="list-group-item"><strong>Reps:</strong> {{ exerciseDetails.reps }}</li>
+                            <li class="list-group-item"><strong>Weight:</strong> {{ exerciseDetails.weight }}kg</li>
+                        </ul>
+                        <div class="mt-3">
+                            <button type="button" v-on:click="getExercises" class="btn btn-success btn-sm mr-2">Back</button>
+                            <button v-if="isTrainer" v-on:click="showUpdateExercise(exerciseDetails.id)" type="button" class="btn btn-primary btn-sm mr-2">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showProfileInfo">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">User Information</h5>
+                            <button class="btn btn-primary btn-sm" v-on:click="editProfile">Edit</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <img src="https://thegymgoat.com/wp-content/uploads/2022/03/Chris-Bumstead-Bio.jpeg" alt="CBUM" class="img-fluid rounded-circle" />
+                                </div>
+                                <div class="col-md-8">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>Username:</strong> {{ loggedInUser.displayName }}</li>
+                                        <li class="list-group-item"><strong>First Name:</strong> {{ loggedInUser.firstName }}</li>
+                                        <li class="list-group-item"><strong>Last Name:</strong> {{ loggedInUser.lastName }}</li>
+                                        <li class="list-group-item"><strong>Birth Date:</strong> {{ formateDate(loggedInUser.birthDate) }}</li>
+                                        <li class="list-group-item"><strong>Email:</strong> {{ loggedInUser.userName }}</li>
+                                        <li class="list-group-item"><strong>Length:</strong> {{ loggedInUser.length }} cm</li>
+                                        <li class="list-group-item"><strong>Weight:</strong> {{ loggedInUser.weight }} kg</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showEditProfile">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Edit User Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <form v-on:submit.prevent="updateProfile">
+                                <div class="form-group">
+                                    <label for="displayName">Username</label>
+                                    <input type="text" class="form-control" id="displayName" v-model="updateUser.displayName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="firstName">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" v-model="updateUser.firstName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" v-model="updateUser.lastName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="birthDate">Birth Date</label>
+                                    <input type="date" class="form-control" id="birthDate" v-model="updateUser.birthDate">
+                                </div>
+                                <div class="form-group">
+                                    <label for="userName">Email</label>
+                                    <input type="email" class="form-control" id="userName" v-model="updateUser.userName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="length">Length (cm)</label>
+                                    <input type="number" class="form-control" id="length" v-model="updateUser.length">
+                                </div>
+                                <div class="form-group">
+                                    <label for="weight">Weight (kg)</label>
+                                    <input type="number" class="form-control" id="weight" v-model="updateUser.weight">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" v-on:click="cancelEdit">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showEditExercise">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Edit exercise</h5>
+                        </div>
+                        <div class="card-body">
+                            <form v-on:submit.prevent="UpdateExercise">
+                                <div class="form-group">
+                                    <label for="name">Name</label>
+                                    <input type="text" class="form-control" id="name" v-model="updateExercise.name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="descrption">Description</label>
+                                    <input type="text" class="form-control" id="description" v-model="updateExercise.description">
+                                </div>
+                                <div class="form-group">
+                                    <label>MuscleGroup</label>
+                                    <select v-model="updateExercise.muscleGroupId" class="form-select">
+                                        <option v-bind:value="muscleGroup.id" v-for="muscleGroup in muscleGroups">{{muscleGroup.name}}</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="reps">Reps</label>
+                                    <input type="number" class="form-control" id="reps" v-model="updateExercise.reps">
+                                </div>
+                                <div class="form-group">
+                                    <label for="sets">Sets</label>
+                                    <input type="number" class="form-control" id="sets" v-model="updateExercise.sets">
+                                </div>
+                                <div class="form-group">
+                                    <label for="weight">Weight (kg)</label>
+                                    <input type="number" class="form-control" id="weight" v-model="updateExercise.weight">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" v-on:click="cancelEditExercise">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="showEditWorkout">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Edit workout</h5>
+                        </div>
+                        <div class="card-body">
+                            <form v-on:submit.prevent="submitUpdateWorkout">
+                                <div class="form-group">
+                                    <label for="name">Name</label>
+                                    <input type="text" class="form-control" id="name" v-model="updateWorkout.name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="descrption">Description</label>
+                                    <input type="text" class="form-control" id="description" v-model="updateWorkout.description">
+                                </div>
+                                <div class="form-group">
+                                    <label>MuscleGroup</label>
+                                    <select v-model="updateWorkout.muscleGroupId" class="form-select">
+                                        <option v-bind:value="muscleGroup.id" v-for="muscleGroup in muscleGroups">{{muscleGroup.name}}</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="duration">Duration</label>
+                                    <input type="number" class="form-control" id="duration" v-model="updateWorkout.duration">
+                                </div>
+                                <div class="form-group">
+                                    <label>Exercises</label>
+                                    <select multiple v-model="updateWorkout.exerciseIds" class="form-select">
+                                        <option v-bind:value="exercise.id" v-for="exercise in exercises">{{exercise.name}}</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" v-on:click="cancelEditWorkout">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* Modal for register *@
+<div class="modal fade" id="registerModal" tabindex="-1" role="dialog" aria-labelledby="registerModal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerModalTitle">Register</h5>
+                <button type="button" v-on:click="toggleModal('registerModal')" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form v-on:submit.prevent="registerUser">
+                    <span v-if="showFormError" class="alert alert-danger">{{formErroMessage}}</span>
+                    <div class="form-group">
+                        <label>First name</label>
+                        <input type="text" v-model="newUser.firstName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Last name</label>
+                        <input type="text" v-model="newUser.lastName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" v-model="newUser.displayName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>email</label>
+                        <input type="email" v-model="newUser.email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" v-model="newUser.password" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Repeat password</label>
+                        <input type="password" v-model="newUser.repeatPassword" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of birth</label>
+                        <input type="date" v-model="newUser.dateOfBirth" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight</label>
+                        <input type="number" v-model="newUser.weight" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Length</label>
+                        <input type="number" v-model="newUser.length" class="form-control">
+                    </div>
+                    <div class="modal-footer">
+                        <button v-on:click="toggleModal('registerModal')" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+@*modal for add exercise*@
+<div class="modal fade" id="createExerciseModal" tabindex="-1" role="dialog" aria-labelledby="createExerciseModal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createExerciseModalTitle">Create exercise</h5>
+                <button type="button" v-on:click="toggleModal('createExerciseModal')" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form v-on:submit.prevent="createExercise">
+                    <span v-if="showFormError" class="alert alert-danger">{{formErroMessage}}</span>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" v-model="newExercise.name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" v-model="newExercise.description" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>MuscleGroup</label>
+                        <select v-model="newExercise.muscleGroupId" class="form-select">
+                            <option v-bind:value="muscleGroup.id" v-for="muscleGroup in muscleGroups">{{muscleGroup.name}}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>reps</label>
+                        <input type="number" v-model="newExercise.reps" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Sets</label>
+                        <input type="number" v-model="newExercise.sets" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight</label>
+                        <input type="number" v-model="newExercise.weight" class="form-control">
+                    </div>
+                    <div class="modal-footer">
+                        <button v-on:click="toggleModal('createExerciseModal')" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@*modal for add exercise*@
+<div class="modal fade" id="createWorkoutModal" tabindex="-1" role="dialog" aria-labelledby="createWorkoutModal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createWorkoutModalTitle">Create exercise</h5>
+                <button type="button" v-on:click="toggleModal('createWorkoutModal')" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form v-on:submit.prevent="createWorkout">
+                    <span v-if="showFormError" class="alert alert-danger">{{formErroMessage}}</span>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" v-model="newWorkout.name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" v-model="newWorkout.description" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <input type="number" v-model="newWorkout.duration" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>MuscleGroup</label>
+                        <select v-model="newWorkout.muscleGroupId" class="form-select">
+                            <option v-bind:value="muscleGroup.id" v-for="muscleGroup in muscleGroups">{{muscleGroup.name}}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Exercises</label>
+                        <select multiple v-model="newWorkout.exerciseIds" class="form-select">
+                            <option v-bind:value="exercise.id" v-for="exercise in exercises">{{exercise.name}}</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button v-on:click="toggleModal('createWorkoutModal')" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
